@@ -1,0 +1,24 @@
+# Moonlight Mart Corp - Python Dependencies (Updated)
+
+# Core dependencies
+requests==2.31.0
+PyYAML==6.0
+python-dotenv==1.0.0
+
+# API integrations
+aiohttp==3.9.0
+urllib3==2.0.7
+
+# Data processing
+pandas==2.0.3
+
+# Logging and monitoring
+python-json-logger==2.0.7
+
+# POD & Print integrations
+Pillow==10.0.0  # For image processing
+reportlab==4.0.7  # For PDF/design generation
+
+# Testing (optional)
+pytest==7.4.0
+pytest-cov==4.1.0
