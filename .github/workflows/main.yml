@@ -1,0 +1,99 @@
+.github/workflows/unified_business_autopilot.yml
+name: Unified Business Autopilot (Alibaba Cloud Enabled)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 16-23 * * *"
+    - cron: "0 0-1 * * *"
+
+jobs:
+  autopilot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install anthropic
+
+      - name: Run full business autopilot with recovery + logging
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p output logs
+
+          echo "=== Moonlight Autopilot Start ===" >> logs/run.log
+          echo "Timestamp: $(date)" >> logs/run.log
+
+          run_script () {
+            SCRIPT=$1
+            echo "--- Running $SCRIPT ---" >> logs/run.log
+
+            if python $SCRIPT; then
+              echo "[SUCCESS] $SCRIPT" >> logs/run.log
+            else
+              echo "[ERROR] $SCRIPT failed, retrying..." >> logs/run.log
+              sleep 2
+
+              if python $SCRIPT; then
+                echo "[RECOVERED] $SCRIPT" >> logs/run.log
+              else
+                echo "[FAILED] $SCRIPT after retry" >> logs/run.log
+              fi
+            fi
+          }
+
+          run_script scripts/claude_code.py
+          run_script scripts/youtube_autopilot.py
+          run_script scripts/marketplace_autopilot.py
+          run_script scripts/saas_autopilot.py
+          run_script scripts/social_autopilot.py
+          run_script scripts/moonlight_integration.py
+
+          run_script scripts/master_dashboard.py
+          run_script scripts/api_json_export.py
+          run_script scripts/daily_summary_email.py
+          run_script scripts/social_autoposter.py
+
+          echo "=== Moonlight Autopilot Complete ===" >> logs/run.log
+
+      - name: Upload business artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: moonlight-business-output
+          path: |
+            output/
+            logs/
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Configure Alibaba Cloud ACK
+        env:
+          ALICLOUD_ACCESS_KEY_ID: ${{ secrets.ALICLOUD_ACCESS_KEY_ID }}
+          ALICLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALICLOUD_ACCESS_KEY_SECRET }}
+          ACK_CLUSTER_ID: ${{ secrets.ACK_CLUSTER_ID }}
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.ACK_KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          echo "Alibaba Cloud ACK configured."
+
+      - name: Deploy to Alibaba Cloud ACK
+        run: |
+          echo "Deploying Moonlight Autopilot to Alibaba Cloud ACK..."
+          kubectl apply -f deploy/deployment.yaml
+          kubectl apply -f deploy/service.yaml
+          echo "Deployment complete."
