@@ -1,0 +1,35 @@
+youtube-autopilot.yml
+name: YouTube Autopilot
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # runs every 12 hours
+  workflow_dispatch:        # manual run button
+
+jobs:
+  youtube_autopilot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Generate YouTube Content Plan (Claude)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "Running YouTube Autopilot..."
+          curl https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d '{
+              "model": "claude-3-sonnet-20240229",
+              "max_tokens": 4096,
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "Generate a YouTube automation package: video ideas, titles, descriptions, tags, scripts, and posting schedule. Output structured JSON."
+                }
+              ]
+            }'
