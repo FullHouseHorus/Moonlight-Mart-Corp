@@ -1,4 +1,4 @@
-name: Claude Code
+name: Copilot Code
 
 on:
   issue_comment:
@@ -9,15 +9,15 @@ on:
     types: [opened]
 
 jobs:
-  claude:
+  copilot:
     if: |
       (github.event_name == 'issue_comment' &&
-       contains(github.event.comment.body, '@claude')) ||
+       contains(github.event.comment.body, '@copilot')) ||
       (github.event_name == 'pull_request_review_comment' &&
-       contains(github.event.comment.body, '@claude')) ||
+       contains(github.event.comment.body, '@copilot')) ||
       (github.event_name == 'issues' &&
-       (contains(github.event.issue.body, '@claude') ||
-        contains(github.event.issue.title, '@claude')))
+       (contains(github.event.issue.body, '@copilot') ||
+        contains(github.event.issue.title, '@copilot')))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Run Claude Code
-        uses: anthropics/claude-code-action@v1
+      - name: Run Copilot Code
+        uses: github/copilot-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
